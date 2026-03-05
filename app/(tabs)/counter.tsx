@@ -28,7 +28,7 @@ export default function CounterScreen() {
         setIsPedometerAvailable(isAvailable);
 
         if (isAvailable) {
-          setStatus('Pedometer active — walk to count steps!');
+          setStatus('Pedometer is active, walk to count steps!');
 
           // Get past 24 hours of step data as proof it works
           const end = new Date();
