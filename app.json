@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "StepCounterApp",
-    "slug": "StepCounterApp",
+    "slug": "stepcounterapp",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -46,6 +46,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "8e48f035-a071-433c-bfff-845a4a5085e7"
+      }
+    },
+    "owner": "cywizd"
   }
 }
