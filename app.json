@@ -22,7 +22,8 @@
         "ACTIVITY_RECOGNITION"
       ],
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.cywizd.stepcounterapp"
     },
     "web": {
       "output": "static",
