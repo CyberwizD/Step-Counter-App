@@ -1,21 +1,57 @@
 import { Pedometer } from 'expo-sensors';
 import { useEffect, useState } from 'react';
-import { StyleSheet } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 
 export default function CounterScreen() {
   const [steps, setSteps] = useState(0);
+  const [pastSteps, setPastSteps] = useState<number | null>(null);
   const [isPedometerAvailable, setIsPedometerAvailable] = useState<boolean | null>(null);
+  const [status, setStatus] = useState('Initializing...');
 
   useEffect(() => {
-    const checkPedometerAvailability = async () => {
-      const isAvailable = await Pedometer.isAvailableAsync();
-      setIsPedometerAvailable(isAvailable);
+    const init = async () => {
+      try {
+        // Request permission on Android
+        if (Platform.OS === 'android') {
+          const { status: permStatus } = await Pedometer.requestPermissionsAsync();
+          if (permStatus !== 'granted') {
+            setStatus('Permission denied');
+            setIsPedometerAvailable(false);
+            return;
+          }
+        }
+
+        const isAvailable = await Pedometer.isAvailableAsync();
+        setIsPedometerAvailable(isAvailable);
+
+        if (isAvailable) {
+          setStatus('Pedometer active — walk to count steps!');
+
+          // Get past 24 hours of step data as proof it works
+          const end = new Date();
+          const start = new Date();
+          start.setDate(end.getDate() - 1);
+
+          try {
+            const pastResult = await Pedometer.getStepCountAsync(start, end);
+            setPastSteps(pastResult.steps);
+          } catch {
+            setPastSteps(null); // Not supported on all devices
+          }
+        } else {
+          setStatus('Pedometer not available on this device');
+        }
+      } catch (error) {
+        console.error('Pedometer init error:', error);
+        setStatus(`Error: ${error}`);
+        setIsPedometerAvailable(false);
+      }
     };
 
-    checkPedometerAvailability();
+    init();
   }, []);
 
   useEffect(() => {
@@ -36,7 +72,7 @@ export default function CounterScreen() {
   if (isPedometerAvailable === null) {
     return (
       <ThemedView style={styles.container}>
-        <ThemedText>Checking pedometer availability...</ThemedText>
+        <ThemedText>{status}</ThemedText>
       </ThemedView>
     );
   }
@@ -44,7 +80,7 @@ export default function CounterScreen() {
   if (!isPedometerAvailable) {
     return (
       <ThemedView style={styles.container}>
-        <ThemedText>Pedometer is not available on this device.</ThemedText>
+        <ThemedText style={styles.statusText}>{status}</ThemedText>
       </ThemedView>
     );
   }
@@ -52,10 +88,17 @@ export default function CounterScreen() {
   return (
     <ThemedView style={styles.container}>
       <ThemedText type="subtitle" style={styles.subtitle}>
-        Keep moving to increase your step count!
+        {status}
       </ThemedText>
       <ThemedText type="title">Steps Counted</ThemedText>
       <ThemedText style={styles.steps}>{steps}</ThemedText>
+
+      {pastSteps !== null && (
+        <ThemedView style={styles.pastContainer}>
+          <ThemedText style={styles.pastLabel}>Last 24 hours</ThemedText>
+          <ThemedText style={styles.pastSteps}>{pastSteps} steps</ThemedText>
+        </ThemedView>
+      )}
     </ThemedView>
   );
 }
@@ -75,6 +118,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginTop: 10,
     marginBottom: 10,
+  },
+  statusText: {
+    fontSize: 16,
+    textAlign: 'center',
+    paddingHorizontal: 20,
+  },
+  pastContainer: {
+    marginTop: 40,
+    alignItems: 'center',
+  },
+  pastLabel: {
+    fontSize: 14,
+    opacity: 0.6,
+  },
+  pastSteps: {
+    fontSize: 24,
+    fontWeight: '600',
+    marginTop: 4,
   },
 });
 
