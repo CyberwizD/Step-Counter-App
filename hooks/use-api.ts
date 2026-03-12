@@ -3,11 +3,7 @@ import { Platform } from 'react-native';
 // Use your machine's local IP for physical device testing
 // On emulator, 10.0.2.2 maps to host localhost
 const getBaseUrl = () => {
-    if (Platform.OS === 'android') {
-        return 'http://localhost:8080';
-    }
-    // iOS simulator or web
-    return 'http://localhost:8080';
+    return 'https://step-counter-app-5osm.onrender.com';
 };
 
 const BASE_URL = getBaseUrl();
