@@ -1,3 +1,4 @@
+import { PermissionModal } from '@/components/permission-modal';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -10,7 +11,6 @@ import React, { useCallback, useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
-    Linking,
     ScrollView,
     StyleSheet,
     Switch,
@@ -24,13 +24,14 @@ export default function SettingsScreen() {
     const [goalInput, setGoalInput] = useState('');
     const [editingGoal, setEditingGoal] = useState(false);
     const [pedometerGranted, setPedometerGranted] = useState(false);
+    const [showPermissionModal, setShowPermissionModal] = useState(false);
     const bgColor = useThemeColor({}, 'background');
     const cardBg = useThemeColor({}, 'card');
     const borderColor = useThemeColor({}, 'border');
     const textColor = useThemeColor({}, 'text');
     const surfaceAlt = useThemeColor({}, 'surfaceAlt');
 
-    // Check pedometer permission status on mount
+    // Check pedometer permission status
     const checkPedometerPermission = useCallback(async () => {
         try {
             const { status } = await Pedometer.getPermissionsAsync();
@@ -44,45 +45,32 @@ export default function SettingsScreen() {
         checkPedometerPermission();
     }, [checkPedometerPermission]);
 
-    // Re-check when the tab comes into focus (user may have toggled it in system settings)
     useFocusEffect(
         useCallback(() => {
             checkPedometerPermission();
         }, [checkPedometerPermission])
     );
 
-    const togglePedometer = async () => {
-        if (pedometerGranted) {
-            // Can't programmatically revoke — tell user to go to system settings
-            Alert.alert(
-                'Disable Pedometer',
-                'To disable activity tracking, turn off the permission in your phone settings.',
-                [
-                    { text: 'Cancel', style: 'cancel' },
-                    { text: 'Open Settings', onPress: () => Linking.openSettings() },
-                ]
-            );
-        } else {
-            // Request the OS permission dialog
-            try {
-                const { status } = await Pedometer.requestPermissionsAsync();
-                if (status === 'granted') {
-                    setPedometerGranted(true);
-                } else {
-                    // User denied or selected "Don't ask again" — offer system settings
-                    Alert.alert(
-                        'Permission Required',
-                        'Activity tracking needs the Activity Recognition permission. Please enable it in your phone settings.',
-                        [
-                            { text: 'Cancel', style: 'cancel' },
-                            { text: 'Open Settings', onPress: () => Linking.openSettings() },
-                        ]
-                    );
-                }
-            } catch {
-                Linking.openSettings();
-            }
+    const togglePedometer = () => {
+        if (!pedometerGranted) {
+            // Show our custom permission modal
+            setShowPermissionModal(true);
         }
+        // If already granted, do nothing (can't revoke programmatically)
+    };
+
+    const handlePermissionAllow = async () => {
+        setShowPermissionModal(false);
+        try {
+            const { status } = await Pedometer.requestPermissionsAsync();
+            setPedometerGranted(status === 'granted');
+        } catch {
+            setPedometerGranted(false);
+        }
+    };
+
+    const handlePermissionDismiss = () => {
+        setShowPermissionModal(false);
     };
 
     const fetchSettings = useCallback(async () => {
@@ -143,6 +131,13 @@ export default function SettingsScreen() {
 
     return (
         <ThemedView style={[styles.container, { backgroundColor: bgColor }]}>
+            {/* Permission Modal */}
+            <PermissionModal
+                visible={showPermissionModal}
+                onAllow={handlePermissionAllow}
+                onDismiss={handlePermissionDismiss}
+            />
+
             <ScrollView
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
