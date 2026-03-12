@@ -1,17 +1,17 @@
 import { Pedometer } from 'expo-sensors';
 import { useEffect, useRef, useState } from 'react';
-import { Platform } from 'react-native';
 import { api } from './use-api';
 
 interface PedometerState {
     liveSteps: number;
     isAvailable: boolean;
     permissionGranted: boolean;
+    status: 'loading' | 'active' | 'unavailable' | 'denied';
 }
 
 /**
  * Hook that manages the device pedometer.
- * - Requests permissions
+ * - Requests permissions (both platforms)
  * - Watches live step count
  * - Periodically syncs steps to the backend
  */
@@ -20,6 +20,7 @@ export function usePedometer() {
         liveSteps: 0,
         isAvailable: false,
         permissionGranted: false,
+        status: 'loading',
     });
 
     const lastSyncedSteps = useRef(0);
@@ -30,20 +31,26 @@ export function usePedometer() {
 
         const init = async () => {
             try {
-                // Request permission on Android
-                if (Platform.OS === 'android') {
-                    const { status } = await Pedometer.requestPermissionsAsync();
-                    if (status !== 'granted') {
-                        setState(prev => ({ ...prev, permissionGranted: false }));
-                        return;
-                    }
+                // Always request permissions first (works on both iOS and Android)
+                const { status: permStatus } = await Pedometer.requestPermissionsAsync();
+
+                if (permStatus !== 'granted') {
+                    setState(prev => ({
+                        ...prev,
+                        permissionGranted: false,
+                        status: 'denied',
+                    }));
+                    return;
                 }
 
+                // Permission granted — now check availability
                 const isAvailable = await Pedometer.isAvailableAsync();
+
                 setState(prev => ({
                     ...prev,
                     isAvailable,
                     permissionGranted: true,
+                    status: isAvailable ? 'active' : 'unavailable',
                 }));
 
                 if (isAvailable) {
@@ -53,6 +60,25 @@ export function usePedometer() {
                 }
             } catch (error) {
                 console.error('Pedometer init error:', error);
+                // If permission request itself fails (e.g. Expo Go limitations),
+                // still try to check availability directly
+                try {
+                    const isAvailable = await Pedometer.isAvailableAsync();
+                    setState(prev => ({
+                        ...prev,
+                        isAvailable,
+                        permissionGranted: isAvailable,
+                        status: isAvailable ? 'active' : 'unavailable',
+                    }));
+
+                    if (isAvailable) {
+                        subscription = Pedometer.watchStepCount(result => {
+                            setState(prev => ({ ...prev, liveSteps: result.steps }));
+                        });
+                    }
+                } catch {
+                    setState(prev => ({ ...prev, status: 'unavailable' }));
+                }
             }
         };
 
