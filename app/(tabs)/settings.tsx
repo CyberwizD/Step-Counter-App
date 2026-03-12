@@ -5,10 +5,12 @@ import { Accent } from '@/constants/theme';
 import { api, Settings } from '@/hooks/use-api';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useFocusEffect } from 'expo-router';
-import React, { useCallback, useState } from 'react';
+import { Pedometer } from 'expo-sensors';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
+    Linking,
     ScrollView,
     StyleSheet,
     Switch,
@@ -21,11 +23,67 @@ export default function SettingsScreen() {
     const [settings, setSettings] = useState<Settings | null>(null);
     const [goalInput, setGoalInput] = useState('');
     const [editingGoal, setEditingGoal] = useState(false);
+    const [pedometerGranted, setPedometerGranted] = useState(false);
     const bgColor = useThemeColor({}, 'background');
     const cardBg = useThemeColor({}, 'card');
     const borderColor = useThemeColor({}, 'border');
     const textColor = useThemeColor({}, 'text');
     const surfaceAlt = useThemeColor({}, 'surfaceAlt');
+
+    // Check pedometer permission status on mount
+    const checkPedometerPermission = useCallback(async () => {
+        try {
+            const { status } = await Pedometer.getPermissionsAsync();
+            setPedometerGranted(status === 'granted');
+        } catch {
+            setPedometerGranted(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        checkPedometerPermission();
+    }, [checkPedometerPermission]);
+
+    // Re-check when the tab comes into focus (user may have toggled it in system settings)
+    useFocusEffect(
+        useCallback(() => {
+            checkPedometerPermission();
+        }, [checkPedometerPermission])
+    );
+
+    const togglePedometer = async () => {
+        if (pedometerGranted) {
+            // Can't programmatically revoke — tell user to go to system settings
+            Alert.alert(
+                'Disable Pedometer',
+                'To disable activity tracking, turn off the permission in your phone settings.',
+                [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Open Settings', onPress: () => Linking.openSettings() },
+                ]
+            );
+        } else {
+            // Request the OS permission dialog
+            try {
+                const { status } = await Pedometer.requestPermissionsAsync();
+                if (status === 'granted') {
+                    setPedometerGranted(true);
+                } else {
+                    // User denied or selected "Don't ask again" — offer system settings
+                    Alert.alert(
+                        'Permission Required',
+                        'Activity tracking needs the Activity Recognition permission. Please enable it in your phone settings.',
+                        [
+                            { text: 'Cancel', style: 'cancel' },
+                            { text: 'Open Settings', onPress: () => Linking.openSettings() },
+                        ]
+                    );
+                }
+            } catch {
+                Linking.openSettings();
+            }
+        }
+    };
 
     const fetchSettings = useCallback(async () => {
         try {
@@ -92,9 +150,6 @@ export default function SettingsScreen() {
                 {/* Header */}
                 <View style={styles.headerRow}>
                     <ThemedText style={styles.pageTitle}>Settings</ThemedText>
-                    <View style={[styles.headerIcon, { backgroundColor: surfaceAlt }]}>
-                        <IconSymbol name="gearshape.fill" size={20} color={Accent.green} />
-                    </View>
                 </View>
 
                 {/* Activity Settings */}
@@ -166,6 +221,35 @@ export default function SettingsScreen() {
                             </ThemedText>
                         </View>
                     </TouchableOpacity>
+                </View>
+
+                {/* Permissions */}
+                <View style={styles.sectionLabelRow}>
+                    <IconSymbol name="gearshape.fill" size={14} color={Accent.teal} />
+                    <ThemedText style={styles.sectionLabel} lightColor="#64748B" darkColor="#94A3B8">
+                        PERMISSIONS
+                    </ThemedText>
+                </View>
+                <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
+                    <View style={styles.row}>
+                        <View style={styles.rowLeft}>
+                            <View style={[styles.iconBg, { backgroundColor: Accent.teal + '18' }]}>
+                                <IconSymbol name="figure.walk" size={18} color={Accent.teal} />
+                            </View>
+                            <View>
+                                <ThemedText style={styles.rowLabel}>Pedometer Tracking</ThemedText>
+                                <ThemedText style={styles.rowHint} lightColor="#94A3B8" darkColor="#64748B">
+                                    {pedometerGranted ? 'Counting your steps' : 'Enable to track steps'}
+                                </ThemedText>
+                            </View>
+                        </View>
+                        <Switch
+                            value={pedometerGranted}
+                            onValueChange={togglePedometer}
+                            trackColor={{ false: '#64748B', true: Accent.green + '66' }}
+                            thumbColor={pedometerGranted ? Accent.green : '#f4f3f4'}
+                        />
+                    </View>
                 </View>
 
                 {/* Notifications */}
@@ -262,13 +346,6 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 24,
-    },
-    headerIcon: {
-        width: 40,
-        height: 40,
-        borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
     },
     pageTitle: {
         fontSize: 28,
