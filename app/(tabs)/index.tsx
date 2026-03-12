@@ -52,6 +52,14 @@ export default function HomeScreen() {
     day: 'numeric',
   });
 
+  const statusConfig = {
+    loading: { color: Accent.orange, text: 'Initializing pedometer...' },
+    active: { color: Accent.green, text: 'Tracking active' },
+    unavailable: { color: Accent.red, text: 'Pedometer unavailable' },
+    denied: { color: Accent.red, text: 'Permission denied — tap to enable in Settings' },
+  };
+  const currentStatus = statusConfig[pedometer.status];
+
   return (
     <ThemedView style={[styles.container, { backgroundColor: bgColor }]}>
       <ScrollView
@@ -76,9 +84,9 @@ export default function HomeScreen() {
 
         {/* Status */}
         <View style={styles.statusRow}>
-          <View style={[styles.statusDot, { backgroundColor: pedometer.isAvailable ? Accent.green : Accent.red }]} />
+          <View style={[styles.statusDot, { backgroundColor: currentStatus.color }]} />
           <ThemedText style={styles.statusText} lightColor="#64748B" darkColor="#94A3B8">
-            {pedometer.isAvailable ? 'Tracking active' : 'Pedometer unavailable'}
+            {currentStatus.text}
           </ThemedText>
         </View>
 
