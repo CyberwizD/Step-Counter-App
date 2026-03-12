@@ -1,41 +1,62 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
+ * Theme constants for the Step Counter App.
+ * Colors, fonts, and design tokens for light and dark mode.
  */
 
 import { Platform } from 'react-native';
 
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
+// Fitness accent colors
+export const Accent = {
+  green: '#4ADE80',
+  greenDark: '#22C55E',
+  teal: '#2DD4BF',
+  orange: '#FB923C',
+  red: '#F87171',
+  blue: '#60A5FA',
+  purple: '#A78BFA',
+};
+
+const tintColorLight = Accent.greenDark;
+const tintColorDark = Accent.green;
 
 export const Colors = {
   light: {
     text: '#11181C',
-    background: '#fff',
+    textSecondary: '#687076',
+    background: '#F8FAFC',
+    surface: '#FFFFFF',
+    surfaceAlt: '#F1F5F9',
+    card: '#FFFFFF',
+    border: '#E2E8F0',
     tint: tintColorLight,
     icon: '#687076',
-    tabIconDefault: '#687076',
+    tabIconDefault: '#94A3B8',
     tabIconSelected: tintColorLight,
+    tabBar: '#FFFFFF',
+    tabBarBorder: '#E2E8F0',
   },
   dark: {
-    text: '#ECEDEE',
-    background: '#151718',
+    text: '#F1F5F9',
+    textSecondary: '#94A3B8',
+    background: '#0F172A',
+    surface: '#1E293B',
+    surfaceAlt: '#334155',
+    card: '#1E293B',
+    border: '#334155',
     tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
+    icon: '#94A3B8',
+    tabIconDefault: '#64748B',
     tabIconSelected: tintColorDark,
+    tabBar: '#1E293B',
+    tabBarBorder: '#334155',
   },
 };
 
 export const Fonts = Platform.select({
   ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
     sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
     serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
     rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
     mono: 'ui-monospace',
   },
   default: {
