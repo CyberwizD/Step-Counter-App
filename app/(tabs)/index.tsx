@@ -55,8 +55,8 @@ export default function HomeScreen() {
   const statusConfig = {
     loading: { color: Accent.orange, text: 'Initializing pedometer...' },
     active: { color: Accent.green, text: 'Tracking active' },
-    unavailable: { color: Accent.red, text: 'Pedometer unavailable' },
-    denied: { color: Accent.red, text: 'Permission denied — tap to enable in Settings' },
+    unavailable: { color: Accent.red, text: 'Pedometer not available on this device' },
+    denied: { color: Accent.orange, text: 'Permission not granted — enable in Settings tab' },
   };
   const currentStatus = statusConfig[pedometer.status];
 
