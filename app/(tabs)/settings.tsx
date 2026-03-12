@@ -223,7 +223,7 @@ export default function SettingsScreen() {
                                 <IconSymbol name="figure.walk" size={18} color={Accent.teal} />
                             </View>
                             <View>
-                                <ThemedText style={styles.rowLabel}>Step Counter App</ThemedText>
+                                <ThemedText style={styles.rowLabel}>Activity Tracker</ThemedText>
                                 <ThemedText style={styles.rowHint} lightColor="#94A3B8" darkColor="#64748B">
                                     Built with Expo + Go
                                 </ThemedText>
@@ -236,7 +236,7 @@ export default function SettingsScreen() {
                 <View style={styles.footer}>
                     <View style={[styles.footerDot, { backgroundColor: Accent.green }]} />
                     <ThemedText style={styles.footerText} lightColor="#CBD5E1" darkColor="#334155">
-                        Identiko © 2026
+                        Activity Tracker © 2026
                     </ThemedText>
                 </View>
             </ScrollView>
