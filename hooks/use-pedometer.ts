@@ -11,7 +11,7 @@ interface PedometerState {
 
 /**
  * Hook that manages the device pedometer.
- * - Requests permissions (both platforms)
+ * - Requests permissions directly (triggers OS dialog on first launch)
  * - Watches live step count
  * - Periodically syncs steps to the backend
  */
@@ -31,7 +31,8 @@ export function usePedometer() {
 
         const init = async () => {
             try {
-                // Always request permissions first (works on both iOS and Android)
+                // Request permission — this is what triggers the standard OS dialog
+                // on first launch. This was the approach that worked before.
                 const { status: permStatus } = await Pedometer.requestPermissionsAsync();
 
                 if (permStatus !== 'granted') {
@@ -43,7 +44,7 @@ export function usePedometer() {
                     return;
                 }
 
-                // Permission granted — now check availability
+                // Permission granted — check hardware availability
                 const isAvailable = await Pedometer.isAvailableAsync();
 
                 setState(prev => ({
@@ -60,8 +61,7 @@ export function usePedometer() {
                 }
             } catch (error) {
                 console.error('Pedometer init error:', error);
-                // If permission request itself fails (e.g. Expo Go limitations),
-                // still try to check availability directly
+                // Fallback — try without permission request (some devices/Expo Go versions)
                 try {
                     const isAvailable = await Pedometer.isAvailableAsync();
                     setState(prev => ({
@@ -70,7 +70,6 @@ export function usePedometer() {
                         permissionGranted: isAvailable,
                         status: isAvailable ? 'active' : 'unavailable',
                     }));
-
                     if (isAvailable) {
                         subscription = Pedometer.watchStepCount(result => {
                             setState(prev => ({ ...prev, liveSteps: result.steps }));
