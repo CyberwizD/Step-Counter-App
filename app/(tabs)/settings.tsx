@@ -1,4 +1,3 @@
-import { PermissionModal } from '@/components/permission-modal';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -24,12 +23,10 @@ export default function SettingsScreen() {
     const [goalInput, setGoalInput] = useState('');
     const [editingGoal, setEditingGoal] = useState(false);
     const [pedometerGranted, setPedometerGranted] = useState(false);
-    const [showPermissionModal, setShowPermissionModal] = useState(false);
     const bgColor = useThemeColor({}, 'background');
     const cardBg = useThemeColor({}, 'card');
     const borderColor = useThemeColor({}, 'border');
     const textColor = useThemeColor({}, 'text');
-    const surfaceAlt = useThemeColor({}, 'surfaceAlt');
 
     // Check pedometer permission status
     const checkPedometerPermission = useCallback(async () => {
@@ -51,26 +48,16 @@ export default function SettingsScreen() {
         }, [checkPedometerPermission])
     );
 
-    const togglePedometer = () => {
+    // Toggle just calls requestPermissionsAsync directly — triggers the OS dialog
+    const togglePedometer = async () => {
         if (!pedometerGranted) {
-            // Show our custom permission modal
-            setShowPermissionModal(true);
+            try {
+                const { status } = await Pedometer.requestPermissionsAsync();
+                setPedometerGranted(status === 'granted');
+            } catch {
+                setPedometerGranted(false);
+            }
         }
-        // If already granted, do nothing (can't revoke programmatically)
-    };
-
-    const handlePermissionAllow = async () => {
-        setShowPermissionModal(false);
-        try {
-            const { status } = await Pedometer.requestPermissionsAsync();
-            setPedometerGranted(status === 'granted');
-        } catch {
-            setPedometerGranted(false);
-        }
-    };
-
-    const handlePermissionDismiss = () => {
-        setShowPermissionModal(false);
     };
 
     const fetchSettings = useCallback(async () => {
@@ -131,13 +118,6 @@ export default function SettingsScreen() {
 
     return (
         <ThemedView style={[styles.container, { backgroundColor: bgColor }]}>
-            {/* Permission Modal */}
-            <PermissionModal
-                visible={showPermissionModal}
-                onAllow={handlePermissionAllow}
-                onDismiss={handlePermissionDismiss}
-            />
-
             <ScrollView
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
@@ -155,7 +135,6 @@ export default function SettingsScreen() {
                     </ThemedText>
                 </View>
                 <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
-                    {/* Daily Goal */}
                     <TouchableOpacity
                         style={styles.row}
                         onPress={() => setEditingGoal(true)}
@@ -197,7 +176,6 @@ export default function SettingsScreen() {
 
                     <View style={[styles.divider, { backgroundColor: borderColor }]} />
 
-                    {/* Units */}
                     <TouchableOpacity style={styles.row} onPress={toggleUnit} activeOpacity={0.7}>
                         <View style={styles.rowLeft}>
                             <View style={[styles.iconBg, { backgroundColor: Accent.blue + '18' }]}>
@@ -311,7 +289,6 @@ export default function SettingsScreen() {
                     </View>
                 </View>
 
-                {/* Footer */}
                 <View style={styles.footer}>
                     <View style={[styles.footerDot, { backgroundColor: Accent.green }]} />
                     <ThemedText style={styles.footerText} lightColor="#CBD5E1" darkColor="#334155">
