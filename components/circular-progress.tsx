@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     stepsText: {
-        fontSize: 36,
+        fontSize: 33,
         fontWeight: '800',
         letterSpacing: -1,
     },
