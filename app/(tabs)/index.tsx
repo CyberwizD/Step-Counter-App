@@ -9,7 +9,7 @@ import { usePedometer } from '@/hooks/use-pedometer';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useFocusEffect } from 'expo-router';
 import { Pedometer } from 'expo-sensors';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
 export default function HomeScreen() {
@@ -17,6 +17,7 @@ export default function HomeScreen() {
   const [stats, setStats] = useState<TodayStats | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [showPermissionModal, setShowPermissionModal] = useState(false);
+  const hasShownModal = useRef(false);
   const bgColor = useThemeColor({}, 'background');
 
   const fetchStats = useCallback(async () => {
@@ -34,10 +35,11 @@ export default function HomeScreen() {
     }, [fetchStats])
   );
 
-  // Show the permission modal if permission is denied/not determined on focus
+  // Show the permission modal ONCE per app session if not granted
   useFocusEffect(
     useCallback(() => {
-      if (pedometer.status === 'denied') {
+      if (pedometer.status === 'denied' && !hasShownModal.current) {
+        hasShownModal.current = true;
         setShowPermissionModal(true);
       }
     }, [pedometer.status])
@@ -46,9 +48,11 @@ export default function HomeScreen() {
   const handlePermissionAllow = async () => {
     setShowPermissionModal(false);
     try {
-      await Pedometer.requestPermissionsAsync();
-    } catch {
-      // silently fail
+      const result = await Pedometer.requestPermissionsAsync();
+      console.log('Permission result:', JSON.stringify(result));
+      // The app will need to be reloaded for the pedometer hook to pick up the new status
+    } catch (err) {
+      console.error('Permission request error:', err);
     }
   };
 
@@ -83,7 +87,7 @@ export default function HomeScreen() {
 
   return (
     <ThemedView style={[styles.container, { backgroundColor: bgColor }]}>
-      {/* Permission Modal — shown on first launch if denied */}
+      {/* Permission Modal — shown once on first launch */}
       <PermissionModal
         visible={showPermissionModal}
         onAllow={handlePermissionAllow}
