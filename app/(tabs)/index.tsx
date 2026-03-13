@@ -1,5 +1,4 @@
 import { CircularProgress } from '@/components/circular-progress';
-import { PermissionModal } from '@/components/permission-modal';
 import { StatCard } from '@/components/stat-card';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -8,16 +7,13 @@ import { api, TodayStats } from '@/hooks/use-api';
 import { usePedometer } from '@/hooks/use-pedometer';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useFocusEffect } from 'expo-router';
-import { Pedometer } from 'expo-sensors';
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
 export default function HomeScreen() {
   const pedometer = usePedometer();
   const [stats, setStats] = useState<TodayStats | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [showPermissionModal, setShowPermissionModal] = useState(false);
-  const hasShownModal = useRef(false);
   const bgColor = useThemeColor({}, 'background');
 
   const fetchStats = useCallback(async () => {
@@ -34,27 +30,6 @@ export default function HomeScreen() {
       fetchStats();
     }, [fetchStats])
   );
-
-  // Show the permission modal ONCE per app session if not granted
-  useFocusEffect(
-    useCallback(() => {
-      if (pedometer.status === 'denied' && !hasShownModal.current) {
-        hasShownModal.current = true;
-        setShowPermissionModal(true);
-      }
-    }, [pedometer.status])
-  );
-
-  const handlePermissionAllow = async () => {
-    setShowPermissionModal(false);
-    try {
-      const result = await Pedometer.requestPermissionsAsync();
-      console.log('Permission result:', JSON.stringify(result));
-      // The app will need to be reloaded for the pedometer hook to pick up the new status
-    } catch (err) {
-      console.error('Permission request error:', err);
-    }
-  };
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -87,13 +62,6 @@ export default function HomeScreen() {
 
   return (
     <ThemedView style={[styles.container, { backgroundColor: bgColor }]}>
-      {/* Permission Modal — shown once on first launch */}
-      <PermissionModal
-        visible={showPermissionModal}
-        onAllow={handlePermissionAllow}
-        onDismiss={() => setShowPermissionModal(false)}
-      />
-
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
